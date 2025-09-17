@@ -21,12 +21,12 @@ def index():
 
 @app.route('/api/data', methods=['POST'])
 def upload():
-    # The 'request' object is now used correctly here, inside a route function.
     global filename
-    print("post successful")
-    stress_level = request.args.get('stress_level', '')
-    filename = interpret(stress_level)
-    print(filename)
+
+    stress_level = request.json.get('stress_level')
+
+    filename = main(stress_level)
+
     return jsonify({"status": "post successful"}), 200
 
 @app.route('/api/data', methods=['GET'])
@@ -39,7 +39,7 @@ def download():
     else:
         return jsonify({'file': 'Not ready'}), 200
 
-def interpret(stress_level):
+def chatGPT(stress_level):
     prompt = f"""
         You are a health assistant specializing in mindfulness and stress reduction. Your task is to provide a short, tailored mindfulness meditation based on a user's self-reported stress level from 1-10.
 
@@ -53,25 +53,24 @@ def interpret(stress_level):
 
         Your response should be a complete mindfulness meditation that the user can follow immediately.
     """
-
     try:
-
-        #response = client.chat.completions.create(
-        #    model="gpt-3.5-turbo",
-        #    messages=[
-        #        {"role": "system", "content": "You are an expert in physiology and emotional health."},
-        #        {"role": "user", "content": prompt}
-        #    ],
-        #    max_tokens=150,
-        #    temperature=0
-        #)
-        result = prompt#response.choices[0].message.content.strip()
-        #print(result)
-        file = text_to_wav_cli(result)
-        return file
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert in physiology and emotional health."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150,
+            temperature=0
+        )
+        result = response.choices[0].message.content.strip()
+        return result
     except Exception as e:
-        print(str(e))
-        return str(e)
+        print(e)
+        return e
+
+
+
 
 def text_to_wav_cli(text, output_folder="tts_output"):
     """
@@ -105,6 +104,33 @@ def text_to_wav_cli(text, output_folder="tts_output"):
         print(f"Error during TTS generation or conversion: {e}")
         return None
 
+def main(stress_level):
+    #Use response for hardcoded replies
+    responses = [
+        # Stress Level 1-3 (Low Stress)
+        "Take a moment to notice a sound you might not have heard before. Listen to it for three full breaths, simply observing its quality without judgment.",
+        "Breathe in a deep breath and as you do, feel the air as it moves into your lungs and fill your stomach. As you do, think of one thing you are grateful for today and sit in that for 15 seconds.",
+        "As you take a drink of water, focus on the sensation of the cold glass in your hand and the feeling of the water moving down your throat. Notice every detail.",
+
+        # Stress Level 4-7 (Moderate Stress)
+        "Begin by taking a deep breath in through your nose, counting to four. Hold for four counts, then slowly exhale through your mouth for six. As you breathe, mentally scan your body, noticing any areas of tension and consciously softening them. Repeat this five times.",
+        "Sit comfortably with your feet on the floor. Close your eyes and take a slow, deep breath. Focus on your breathing. Now, bring your awareness to your feet. Wiggle your toes. Slowly move your awareness up through your body, noticing any sensations in your legs, torso, and arms. Feel yourself grounded in this moment.",
+        "Place one hand on your chest and the other on your stomach. Take a deep breath through your nose, feeling your stomach expand. Exhale slowly through your mouth. Pay attention to the rhythm of your breath and the rise and fall of your hands. Continue until you feel a sense of calm.",
+        "Take a long, slow breath in through your nose, filling your lungs completely. Hold for a moment, then release a long, slow exhale through your mouth. As you exhale, imagine any tension or worry leaving your body. Repeat five times."
+
+        # Stress Level 8-10 (High Stress)
+        "Take a slow, deep breath in for four counts. Hold for four counts. Exhale slowly for four counts. Repeat this three times. The only focus is the numbers and your breath.",
+        "Sit down and close your eyes. Place your attention on your feet. Feel them grounded to the floor. Notice the pressure and the connection. As you exhale, imagine the tension leaving your body through your feet.",
+        "Focus on your breath. Inhale: 1-2-3-4. Exhale: 1-2-3-4. Repeat this simple count for a few cycles. Your only job is to breathe and count."
+    ]
+    if stress_level:
+        stress_level=int(stress_level)
+    else:
+        stress_level=1
+
+    result = responses[stress_level-1]#chatGPT(stress_level)
+    file = text_to_wav_cli(result)
+    return file
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
