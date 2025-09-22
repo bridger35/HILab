@@ -1,17 +1,19 @@
 from flask import Flask, request, jsonify, send_from_directory
 import os
 import openai
-from dotenv import load_dotenv
+import dotenv
 from gtts import gTTS
 import time
 
 from pydub import AudioSegment
 
-load_dotenv()
+dotenv.load_dotenv()
 
 app = Flask(__name__)
 
-client = openai.Client(api_key="sk-proj--dwUytJZQGU1g74DXxUrLXlESmHbWZEQXf0If1bAp01H5afpIey9aNOoYho-bQETslzC6dKwgsT3BlbkFJAbD2pqD_MMomqSJHIFO4inpI789Qd8mz8ocl3pGrAQDN2GdFum8VL95qxzB8gkcRQZzWFA")
+key = os.getenv("OPEN_API_KEY") #Dotenv file not stored on github becuase repo is public
+
+client = openai.Client(api_key=key)
 filename=''
 ready=False
 
@@ -105,7 +107,7 @@ def text_to_wav_cli(text, output_folder="tts_output"):
         return None
 
 def main(stress_level):
-    #Use response for hardcoded replies
+    #Use responses for hardcoded replies otherwise use chatGPT(<stress_level>)
     responses = [
         # Stress Level 1-3 (Low Stress)
         "Take a moment to notice a sound you might not have heard before. Listen to it for three full breaths, simply observing its quality without judgment.",
@@ -116,21 +118,20 @@ def main(stress_level):
         "Begin by taking a deep breath in through your nose, counting to four. Hold for four counts, then slowly exhale through your mouth for six. As you breathe, mentally scan your body, noticing any areas of tension and consciously softening them. Repeat this five times.",
         "Sit comfortably with your feet on the floor. Close your eyes and take a slow, deep breath. Focus on your breathing. Now, bring your awareness to your feet. Wiggle your toes. Slowly move your awareness up through your body, noticing any sensations in your legs, torso, and arms. Feel yourself grounded in this moment.",
         "Place one hand on your chest and the other on your stomach. Take a deep breath through your nose, feeling your stomach expand. Exhale slowly through your mouth. Pay attention to the rhythm of your breath and the rise and fall of your hands. Continue until you feel a sense of calm.",
-        "Take a long, slow breath in through your nose, filling your lungs completely. Hold for a moment, then release a long, slow exhale through your mouth. As you exhale, imagine any tension or worry leaving your body. Repeat five times."
+        "Take a long, slow breath in through your nose, filling your lungs completely. Hold for a moment, then release a long, slow exhale through your mouth. As you exhale, imagine any tension or worry leaving your body. Repeat five times.",
 
         # Stress Level 8-10 (High Stress)
         "Take a slow, deep breath in for four counts. Hold for four counts. Exhale slowly for four counts. Repeat this three times. The only focus is the numbers and your breath.",
         "Sit down and close your eyes. Place your attention on your feet. Feel them grounded to the floor. Notice the pressure and the connection. As you exhale, imagine the tension leaving your body through your feet.",
         "Focus on your breath. Inhale: 1-2-3-4. Exhale: 1-2-3-4. Repeat this simple count for a few cycles. Your only job is to breathe and count."
     ]
-    if stress_level:
-        stress_level=int(stress_level)
-    else:
-        stress_level=1
+    stress_level = int(stress_level)
 
-    result = responses[stress_level-1]#chatGPT(stress_level)
+    #result = responses[min(stress_level-1,9)]
+    result = chatGPT(stress_level)
     file = text_to_wav_cli(result)
     return file
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
