@@ -9,7 +9,7 @@ import sys
 
 def monitor(turbo_ip,api_ip,interval=3, threshold = 3):
     try:
-        tsi = ep.TurbosatoriNetworkinterface(turbo_ip,55555)
+        tsi = ep.TurbosatoriNetworkInterface(turbo_ip,55555)
         run=True
         while run:
             currentTimePoint = tsi.get_current_time_point()[0];
