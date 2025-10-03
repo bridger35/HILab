@@ -13,7 +13,11 @@ stop_event = threading.Event()
 print("Enter \'exit\' to stop Turbosatori_Connection.py")
 def monitor(api_ip,file_name,interval=3, threshold = 3,turbo_ip='localhost'):
     try:
-        f = open(file_name, "w")
+        if not os.path.exists('turbosatori_output'):
+            os.makedirs('turbosatori_output')
+        if os.path.exists('turbosatori_output/'+file_name+'.csv'):
+            file_name+=str(int(time.time()))
+        f = open('turbosatori_output/'+file_name+'.csv', "w")
         f.write("currentTimePoint,channels,oxy,scaleFactor\n")
 
         #tsi = ep.TurbosatoriNetworkInterface(turbo_ip,55555)
