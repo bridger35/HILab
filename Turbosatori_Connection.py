@@ -1,23 +1,43 @@
 import requests
 import json
 import random
-import expyriment.io.extras as ep
+#import expyriment.io.extras as ep
 import time
 import sys
+import threading
+import os
 
 #Launch via 'python <file_name> <turbosatori_ip> <api_ip>' in cmd prompt
 
-def monitor(api_ip,interval=3, threshold = 3,turbo_ip='localhost'):
+stop_event = threading.Event()
+print("Enter \'exit\' to stop Turbosatori_Connection.py")
+def monitor(api_ip,file_name,interval=3, threshold = 3,turbo_ip='localhost'):
     try:
-        tsi = ep.TurbosatoriNetworkInterface(turbo_ip,55555)
-        run=True
-        while run:
-            currentTimePoint = tsi.get_current_time_point()[0]
-            channels = tsi.get_selected_channels()[0]
-            oxy = tsi.get_data_oxy(channels[0],currentTimePoint-1)[0]
-            scaleFactor = tsi.get_oxy_data_scale_factor()[0]
+        f = open(file_name, "w")
+        f.write("currentTimePoint,channels,oxy,scaleFactor\n")
+
+        #tsi = ep.TurbosatoriNetworkInterface(turbo_ip,55555)
+        while not stop_event.is_set():
+            data=[]
+            currentTimePoint = 1#tsi.get_current_time_point()[0]
+            data.append(currentTimePoint)
+            channels = 1#tsi.get_selected_channels()[0]
+            data.append(channels)
+            oxy = 1#tsi.get_data_oxy(channels[0],currentTimePoint-1)[0]
+            data.append(oxy)
+            scaleFactor = 1#tsi.get_oxy_data_scale_factor()[0]
+            data.append(scaleFactor)
+            Line = ""
+            for item in data:
+                if not Line:
+                    Line+=str(item)
+                else:
+                    Line+=','
+                    Line+=str(item)
+            f.write(f"{Line}\n")
             analysis(currentTimePoint,channels,oxy,scaleFactor,api_ip, threshold)
             time.sleep(interval)
+
     except Exception as e:
         print(f"Error; {e}")
 
@@ -29,6 +49,12 @@ def analysis(currentTimePoint,channels,oxy,scaleFactor,api_ip, threshold):
         print(stress_level)
         connect(stress_level,api_ip)
 
+def userInput():
+    user=input("")
+    while(user != 'exit'):
+        user=input("")
+    stop_event.set()
+    print("Turbosatori_Connection.py waiting for thread termination")
 
 def connect(stress_level,api_ip):
     try:
@@ -45,4 +71,20 @@ def connect(stress_level,api_ip):
 
 #Can extend input with interval for accessing Turbosatori and threshold stress level for sending out to api
 #Turbosatori ip defualts to localhost
-monitor(sys.argv[1])
+#Intialize threads
+threads = []
+#Intialize monitor loop
+thread = threading.Thread(target=monitor, args=(sys.argv[1],sys.argv[2]))
+threads.append(thread)
+thread.start()
+
+#Intiliaze User input loop
+thread = threading.Thread(target=userInput)
+threads.append(thread)
+thread.start()
+
+# Wait for all threads to complete
+for thread in threads:
+    thread.join()
+
+print("All threads have finished.")

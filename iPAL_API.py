@@ -125,8 +125,7 @@ def main(stress_level):
         "Sit down and close your eyes. Place your attention on your feet. Feel them grounded to the floor. Notice the pressure and the connection. As you exhale, imagine the tension leaving your body through your feet.",
         "Focus on your breath. Inhale: 1-2-3-4. Exhale: 1-2-3-4. Repeat this simple count for a few cycles. Your only job is to breathe and count."
     ]
-    stress_level = int(stress_level)
-
+    #stress_level = int(stress_level)
     #result = responses[min(stress_level-1,9)]
     result = chatGPT(stress_level)
     file = text_to_wav_cli(result)
