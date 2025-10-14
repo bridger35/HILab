@@ -23,6 +23,10 @@ def index():
 
 @app.route('/api/data', methods=['POST'])
 def upload():
+    """
+    :return: Turbosatori_Connection.py passes on stress level
+    WAV file else pass not ready
+    """
     global filename
 
     stress_level = request.json.get('stress_level')
@@ -33,6 +37,10 @@ def upload():
 
 @app.route('/api/data', methods=['GET'])
 def download():
+    """
+    If the WAV file is generated then pass the filename to Unreal
+    :return:
+    """
     global ready
     if ready:
 
@@ -42,6 +50,10 @@ def download():
         return jsonify({'file': 'Not ready'}), 200
 
 def chatGPT(stress_level):
+    """
+    :param stress_level:  1-10 value generated from Turbosatori analysis
+    :return: Custom response as a health assitant aiming to calm a <stress_level> participant
+    """
     prompt = f"""
         You are a health assistant specializing in mindfulness and stress reduction. Your task is to provide a short, tailored mindfulness meditation based on a user's self-reported stress level from 1-10.
 
@@ -76,8 +88,8 @@ def chatGPT(stress_level):
 
 def text_to_wav_cli(text, output_folder="tts_output"):
     """
-    Generates a WAV file from the given text using gTTS and converts it to a PCM WAV
-    (16-bit, 16kHz, mono) format suitable for NVIDIA ACE.
+    Generates a MP3 file from the given text using gTTS and converts it to a PCM WAV
+    using ffmpeg (16-bit, 16kHz, mono) format suitable for NVIDIA ACE.
     """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -107,7 +119,14 @@ def text_to_wav_cli(text, output_folder="tts_output"):
         return None
 
 def main(stress_level):
-    #Use responses for hardcoded replies otherwise use chatGPT(<stress_level>)
+    """
+    Use responses[] for hardcoded replies otherwise use chatGPT(<stress_level>)
+    Passes stress level to chatGPT for custom response based on prompt
+    Response is then passed to text_to_wav_cli for WAV file generation
+    :param stress_level: 1-10 value generated from Turbosatori analysis
+    :return: WAV filename
+    """
+
     responses = [
         # Stress Level 1-3 (Low Stress)
         "Take a moment to notice a sound you might not have heard before. Listen to it for three full breaths, simply observing its quality without judgment.",

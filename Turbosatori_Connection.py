@@ -7,11 +7,28 @@ import sys
 import threading
 import os
 
-#Launch via 'python <file_name> <turbosatori_ip> <api_ip>' in cmd prompt
+"""
+Launch via 'python <file_name> <api_ip>' in cmd prompt
+Can extend input with interval for accessing Turbosatori and threshold stress level for sending out to api
+Turbosatori ip defualts to localhost
+expyriment import and tsi functions may be commented out for testing
+"""
 
 stop_event = threading.Event()
+prev_stress = 0
 print("Enter \'exit\' to stop Turbosatori_Connection.py")
+
 def monitor(api_ip,file_name,interval=3, threshold = 3,turbo_ip='localhost'):
+    """
+    This function loops through gathering and writing the data for Turbosatori for analysis
+    :param api_ip: IP address for passing stress level to iPAL_API.py
+    :param file_name: User provided file name for writing data to csv
+    :param interval: value for sleep() to specify how often monitor loops
+    :param threshold: min stress threshold for triggering Metahuman
+    :param turbo_ip: Defualted to localhost as this is made to run on the same machine as Turbosatori
+        IP address of Turbosatori machine
+    :return: No return, loop until user stops or exception
+    """
     try:
         if not os.path.exists('turbosatori_output'):
             os.makedirs('turbosatori_output')
@@ -46,14 +63,31 @@ def monitor(api_ip,file_name,interval=3, threshold = 3,turbo_ip='localhost'):
         print(f"Error; {e}")
 
 def analysis(currentTimePoint,channels,oxy,scaleFactor,api_ip, threshold):
+    """
+    Takes values gathered from Turbosatori and proccess them into a stress value
+    If the stress level exceeds threshold, pass to iPAL_API.py
+    :param currentTimePoint:
+    :param channels:
+    :param oxy:
+    :param scaleFactor:
+    :param api_ip: IP address for passing stress level to iPAL_API.py
+    :param threshold: min stress threshold for triggering Metahuman
+    :return:
+    """
+    #print(f"Current Time: {currentTimePoint}, Channels: {channels}, Oxygen levels: {oxy}, Scale: {scaleFactor}")
 
+    global prev_stress
     stress_level = str(random.randint(1,10))
-    print(f"Current Time: {currentTimePoint}, Channels: {channels}, Oxygen levels: {oxy}, Scale: {scaleFactor}")
-    if int(stress_level) > 0:
-        print(stress_level)
+    if int(stress_level) > 0 and stress_level > prev_stress:
         connect(stress_level,api_ip)
+    prev_stress = stress_level
 
 def userInput():
+    """
+    Runs in concurrency with Monitor(), waits for user to enter exit to gently close the program
+    user inputs can be eaten by print statements(working on this)
+    :return:
+    """
     user=input("")
     while(user != 'exit'):
         user=input("")
@@ -61,6 +95,12 @@ def userInput():
     print("Turbosatori_Connection.py waiting for thread termination")
 
 def connect(stress_level,api_ip):
+    """
+    Connect to iPAL_API.py through api_ip and pass on stress_level
+    :param stress_level: 1-10 value generated from Turbosatori analysis
+    :param api_ip: IP address for passing stress level to iPAL_API.py
+    :return:
+    """
     try:
 
         response = requests.post(f'http://{api_ip}:5000/api/data', json={'stress_level': stress_level})
@@ -73,8 +113,7 @@ def connect(stress_level,api_ip):
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
 
-#Can extend input with interval for accessing Turbosatori and threshold stress level for sending out to api
-#Turbosatori ip defualts to localhost
+
 #Intialize threads
 threads = []
 #Intialize monitor loop
