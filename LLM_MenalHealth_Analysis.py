@@ -3,7 +3,7 @@
 from scipy.stats import f_oneway
 import numpy as np
 
-# Sample data for your three groups
+# Sample data 
 llm_fttc = [85, 88, 92, 89, 95]
 general_llm = [78, 80, 75, 83, 79]
 none_group = [65, 68, 70, 62, 66]
